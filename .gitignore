@@ -1,2 +1,2 @@
-**/__pycagit rm -r --cached .che__/
+**/__pycache__/**
 *.py[cod]
