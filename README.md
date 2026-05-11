@@ -1,6 +1,6 @@
 # Flask Web App
 
-This is a minimal Flask web client for the existing FastAPI backend.
+This is a minimal Flask web client for the ID-Way Assistant.
 
 ## Install
 
