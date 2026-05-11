@@ -14,7 +14,7 @@ WEBAPP_DIR = Path(__file__).resolve().parent
 ROOT_DIR = WEBAPP_DIR.parent
 CONFIG_PATH = ROOT_DIR / "config.json"
 
-DEFAULT_BACKEND_URL = "https://guileful-lola-thinnish.ngrok-free.dev"
+DEFAULT_BACKEND_URL = "http://127.0.0.1:8001"
 DEFAULT_WORKFLOW_ID = "us_nonimmigrant_visa"
 REQUEST_TIMEOUT_SECONDS = 180
 
@@ -67,11 +67,7 @@ def get_workflow_id() -> str:
     return workflow_id or DEFAULT_WORKFLOW_ID
 
 
-app = Flask(
-    __name__,
-    template_folder=str(ROOT_DIR / "templates"),
-    static_folder=str(ROOT_DIR / "static"),
-)
+app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
 
 
@@ -80,13 +76,28 @@ def index() -> str:
     return render_template(
         "index.html",
         backend_url=get_backend_url(),
-        workflow_id=get_workflow_id(),
+        workflow_id="Auto-detect",
     )
+
+
+@app.get("/api/workflows")
+def list_workflows() -> Any:
+    backend_url = f"{get_backend_url()}/workflows/catalog"
+    try:
+        response = requests.get(backend_url, timeout=REQUEST_TIMEOUT_SECONDS)
+    except requests.RequestException as exc:
+        return jsonify({"detail": f"Unable to reach backend: {exc}"}), 502
+
+    try:
+        backend_payload = response.json()
+    except ValueError:
+        backend_payload = {"detail": response.text or "The backend returned an invalid response."}
+
+    return jsonify(backend_payload), response.status_code
 
 
 @app.post("/api/chat")
 def chat() -> Any:
-    backend_url = f"{get_backend_url()}/workflows/{get_workflow_id()}/chat"
     if request.is_json:
         payload = request.get_json(silent=True) or {}
         session_id = str(payload.get("workflow_session_id") or payload.get("session_id") or "").strip()
@@ -94,6 +105,8 @@ def chat() -> Any:
     else:
         session_id = str(request.form.get("workflow_session_id") or request.form.get("session_id") or "").strip()
         prompt = str(request.form.get("prompt") or "")
+
+    backend_url = f"{get_backend_url()}/workflows/chat"
 
     uploaded_files = request.files.getlist("file")
     has_files = any(file_storage.filename for file_storage in uploaded_files)
@@ -153,7 +166,7 @@ def chat() -> Any:
 
 @app.delete("/api/sessions/<session_id>")
 def delete_session(session_id: str) -> Any:
-    backend_url = f"{get_backend_url()}/workflows/{get_workflow_id()}/sessions/{session_id}"
+    backend_url = f"{get_backend_url()}/workflows/sessions/{session_id}"
 
     try:
         response = requests.delete(

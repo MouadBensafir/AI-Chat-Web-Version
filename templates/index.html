@@ -681,8 +681,8 @@
       <div class="chat-header-left">
         <div class="status-dot"></div>
         <div>
-          <div class="chat-title">Visa Workflow Runtime</div>
-          <div class="chat-subtitle">Secure Document &amp; Identity Service</div>
+          <div class="chat-title" id="chat-title">E-Service Workflow Runtime</div>
+          <div class="chat-subtitle" id="chat-subtitle">Secure document and identity services</div>
         </div>
       </div>
       <div class="header-badge">Classified Session</div>
@@ -692,7 +692,7 @@
     <div class="welcome" id="welcome">
       <img src="{{ url_for('static', filename='ingroupe_logo.png') }}" alt="IN Groupe" class="welcome-logo" />
       <div class="welcome-title">Welcome to IDWay</div>
-      <div class="welcome-sub">Your secure visa workflow assistant. Describe your request or attach documents to get started.</div>
+      <div class="welcome-sub">Describe the service you want to do, and the agent will identify the right workflow and continue with the correct steps.</div>
     </div>
 
     <!-- Drag & drop backdrop -->
@@ -752,12 +752,17 @@
   const statusEl     = document.getElementById('status');
   const errorEl      = document.getElementById('error');
   const sessionIdEl  = document.getElementById('session-id');
+  const workflowIdEl = document.getElementById('workflow-id');
   const tokenUsageEl = document.getElementById('token-usage');
+  const chatTitleEl  = document.getElementById('chat-title');
+  const chatSubtitleEl = document.getElementById('chat-subtitle');
   const welcomeEl    = document.getElementById('welcome');
   const chatArea     = document.getElementById('chat-area');
   const dragBackdrop = document.getElementById('drag-backdrop');
 
   let sessionId  = '';
+  let workflowId = '';
+  let workflowTitle = '';
   let attachments = [];
   let tokenUsage  = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
 
@@ -854,6 +859,8 @@
       if (!reply) throw new Error('Empty response from agent.');
 
       sessionId  = `${data?.workflow_session_id || data?.session_id || ''}`.trim();
+      workflowId = `${data?.workflow_id || ''}`.trim();
+      workflowTitle = `${data?.workflow_title || ''}`.trim();
       tokenUsage = normalizeTokens(data?.token_usage);
       renderSession();
       renderTokenUsage();
@@ -979,7 +986,7 @@
   function hideWelcome() { welcomeEl.classList.add('hidden'); }
 
   function clearConversation() {
-    sessionId = ''; attachments = [];
+    sessionId = ''; workflowId = ''; workflowTitle = ''; attachments = [];
     tokenUsage = { prompt_tokens:0, completion_tokens:0, total_tokens:0 };
     promptEl.value = '';
     renderAttachments(); renderSession(); renderTokenUsage();
@@ -988,7 +995,14 @@
     autoResize();
   }
 
-  function renderSession()    { sessionIdEl.textContent = sessionId || '—'; }
+  function renderSession() {
+    sessionIdEl.textContent = sessionId || '—';
+    workflowIdEl.textContent = workflowTitle || workflowId || 'Auto-detect';
+    chatTitleEl.textContent = workflowTitle ? `${workflowTitle} Runtime` : 'E-Service Workflow Runtime';
+    chatSubtitleEl.textContent = workflowId
+      ? `Detected workflow: ${workflowId}`
+      : 'Secure document and identity services';
+  }
 
   function renderTokenUsage() {
     tokenUsageEl.textContent = `${tokenUsage.total_tokens} total · ${tokenUsage.prompt_tokens} prompt · ${tokenUsage.completion_tokens} completion`;
