@@ -67,7 +67,11 @@ def get_workflow_id() -> str:
     return workflow_id or DEFAULT_WORKFLOW_ID
 
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder=str(ROOT_DIR / "templates"),
+    static_folder=str(ROOT_DIR / "static"),
+)
 app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
 
 
